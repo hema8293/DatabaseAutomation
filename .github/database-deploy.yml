@@ -1,0 +1,65 @@
+name: Database Deployment
+
+on:
+  push:
+    branches:
+      - main  # Runs on every push to main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set Up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.9'
+
+      - name: Install MySQL Connector
+        run: pip install mysql-connector-python
+
+      - name: Execute SQL Script
+        env:
+          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+        run: |
+          python - <<EOF
+          import mysql.connector
+          import os
+
+          DB_CONFIG = {
+              "host": os.getenv("MYSQL_HOST"),
+              "user": os.getenv("MYSQL_USER"),
+              "password": os.getenv("MYSQL_PASSWORD"),
+              "database": os.getenv("MYSQL_DATABASE"),
+              "port": 3306
+          }
+
+          try:
+              connection = mysql.connector.connect(**DB_CONFIG)
+              cursor = connection.cursor()
+
+              with open("sql_scripts/schema_changes.sql", "r") as file:
+                  sql_commands = file.read().split(";")
+
+              for command in sql_commands:
+                  if command.strip():
+                      cursor.execute(command)
+
+              connection.commit()
+              print("✅ SQL script executed successfully.")
+
+          except mysql.connector.Error as err:
+              print(f"❌ Error: {err}")
+
+          finally:
+              if connection and connection.is_connected():
+                  cursor.close()
+                  connection.close()
+                  print("🔗 Connection closed.")
+          EOF
