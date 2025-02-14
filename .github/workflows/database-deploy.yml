@@ -17,12 +17,25 @@ jobs:
       - name: Install MySQL Client
         run: sudo apt-get install -y mysql-client
 
+      - name: Debug Environment Variables
+        run: |
+          echo "🔎 Debugging Environment Variables..."
+          echo "MYSQL_HOST: $MYSQL_HOST"
+          echo "MYSQL_USER: $MYSQL_USER"
+          echo "MYSQL_DATABASE: $MYSQL_DATABASE"
+          echo "MYSQL_PASSWORD: [HIDDEN]"  # Hide password for security
+        env:
+          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+
       - name: Execute SQL script
         env:
-          DB_HOST: priyacompanydb.mysql.database.azure.com
-          DB_USER: priya
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_NAME: priyacompanydb
+          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
         run: |
-          echo "🔗 Connecting to MySQL Database at $DB_HOST..."
-          mysql -h "$DB_HOST" -P 3306 -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < schema_changes.sql
+          echo "🔗 Connecting to MySQL Database at $MYSQL_HOST..."
+          mysql -h "$MYSQL_HOST" -P 3306 -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" < schema_changes.sql
