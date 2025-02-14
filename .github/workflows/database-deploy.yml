@@ -14,15 +14,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v3
-        with:
-          python-version: '3.9'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install mysql-connector-python
+      - name: Install MySQL Client
+        run: sudo apt-get install -y mysql-client
 
       - name: Execute SQL script
         env:
@@ -31,4 +24,5 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_NAME: priyacompanydb
         run: |
+          echo "🔗 Connecting to MySQL Database at $DB_HOST..."
           mysql -h "$DB_HOST" -P 3306 -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < schema_changes.sql
