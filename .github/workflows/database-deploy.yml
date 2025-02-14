@@ -3,8 +3,8 @@ name: Database Deployment
 on:
   push:
     branches:
-      - main  # Runs on every push to main
-  workflow_dispatch:  # Allows manual trigger from GitHub Actions
+      - main
+  workflow_dispatch:  # Allows manual trigger from GitHub
 
 jobs:
   deploy:
@@ -29,36 +29,43 @@ jobs:
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
         run: |
+          echo "🔗 Connecting to MySQL Database at $MYSQL_HOST..."
+          
           python - <<EOF
           import mysql.connector
           import os
 
           try:
+              # Fetch environment variables
+              MYSQL_HOST = os.getenv("MYSQL_HOST")
+              MYSQL_USER = os.getenv("MYSQL_USER")
+              MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
+              MYSQL_DATABASE = os.getenv("MYSQL_DATABASE")
+
+              print(f"🔗 Connecting to MySQL Database at {MYSQL_HOST}...")
+              
               # Database connection configuration
               DB_CONFIG = {
-                  "host": os.getenv("MYSQL_HOST"),
-                  "user": os.getenv("MYSQL_USER"),
-                  "password": os.getenv("MYSQL_PASSWORD"),
-                  "database": os.getenv("MYSQL_DATABASE"),
+                  "host": MYSQL_HOST,
+                  "user": MYSQL_USER,
+                  "password": MYSQL_PASSWORD,
+                  "database": MYSQL_DATABASE,
                   "port": 3306
               }
 
-              print("🔗 Connecting to MySQL Database...")
               connection = mysql.connector.connect(**DB_CONFIG)
               cursor = connection.cursor()
 
-              # Execute multiple SQL files from the repository
-              sql_files = ["schema_changes.sql"]
+              # Execute SQL script
+              sql_file = "schema_changes.sql"
+              print(f"🚀 Executing {sql_file}...")
+              with open(sql_file, "r") as file:
+                  sql_commands = file.read().split(";")
 
-              for sql_file in sql_files:
-                  print(f"🚀 Executing {sql_file}...")
-                  with open(sql_file, "r") as file:
-                      sql_commands = file.read().split(";")
-                  
-                  for command in sql_commands:
-                      if command.strip():
-                          cursor.execute(command)
-                  
+              for command in sql_commands:
+                  if command.strip():
+                      cursor.execute(command)
+
               connection.commit()
               print("✅ SQL script executed successfully.")
 
