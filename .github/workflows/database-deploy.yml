@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main  # Runs on every push to main
+  workflow_dispatch:  # Allows manual trigger from GitHub Actions
 
 jobs:
   deploy:
@@ -32,33 +33,41 @@ jobs:
           import mysql.connector
           import os
 
-          DB_CONFIG = {
-              "host": os.getenv("MYSQL_HOST"),
-              "user": os.getenv("MYSQL_USER"),
-              "password": os.getenv("MYSQL_PASSWORD"),
-              "database": os.getenv("MYSQL_DATABASE"),
-              "port": 3306
-          }
-
           try:
+              # Database connection configuration
+              DB_CONFIG = {
+                  "host": os.getenv("MYSQL_HOST"),
+                  "user": os.getenv("MYSQL_USER"),
+                  "password": os.getenv("MYSQL_PASSWORD"),
+                  "database": os.getenv("MYSQL_DATABASE"),
+                  "port": 3306
+              }
+
+              print("🔗 Connecting to MySQL Database...")
               connection = mysql.connector.connect(**DB_CONFIG)
               cursor = connection.cursor()
 
-              with open("sql_scripts/schema_changes.sql", "r") as file:
-                  sql_commands = file.read().split(";")
+              # Execute multiple SQL files from the repository
+              sql_files = ["schema_changes.sql"]
 
-              for command in sql_commands:
-                  if command.strip():
-                      cursor.execute(command)
-
+              for sql_file in sql_files:
+                  print(f"🚀 Executing {sql_file}...")
+                  with open(sql_file, "r") as file:
+                      sql_commands = file.read().split(";")
+                  
+                  for command in sql_commands:
+                      if command.strip():
+                          cursor.execute(command)
+                  
               connection.commit()
               print("✅ SQL script executed successfully.")
 
           except mysql.connector.Error as err:
-              print(f"❌ Error: {err}")
+              print(f"❌ Database Error: {err}")
+              exit(1)
 
           finally:
-              if connection and connection.is_connected():
+              if 'connection' in locals() and connection.is_connected():
                   cursor.close()
                   connection.close()
                   print("🔗 Connection closed.")
