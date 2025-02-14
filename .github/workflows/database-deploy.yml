@@ -31,37 +31,4 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_NAME: priyacompanydb
         run: |
-          python - <<EOF
-          import mysql.connector
-          import os
-
-          try:
-              connection = mysql.connector.connect(
-                  host=os.getenv("DB_HOST"),
-                  user=os.getenv("DB_USER"),
-                  password=os.getenv("DB_PASSWORD"),
-                  database=os.getenv("DB_NAME"),
-                  port=3306
-              )
-
-              cursor = connection.cursor()
-              with open("schema_changes.sql", "r") as file:
-                  sql_commands = file.read().split(";")
-
-              for command in sql_commands:
-                  if command.strip():
-                      cursor.execute(command)
-
-              connection.commit()
-              print("✅ SQL script executed successfully.")
-
-          except mysql.connector.Error as err:
-              print(f"❌ Database Error: {err}")
-              exit(1)
-
-          finally:
-              if 'connection' in locals() and connection.is_connected():
-                  cursor.close()
-                  connection.close()
-                  print("🔗 Connection closed.")
-          EOF
+          mysql -h "$DB_HOST" -P 3306 -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < schema_changes.sql
