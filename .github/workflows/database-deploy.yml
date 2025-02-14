@@ -20,9 +20,9 @@ jobs:
       - name: Debug Environment Variables
         run: |
           echo "🔎 Debugging Environment Variables..."
-          echo "MYSQL_HOST: $MYSQL_HOST"
-          echo "MYSQL_USER: $MYSQL_USER"
-          echo "MYSQL_DATABASE: $MYSQL_DATABASE"
+          echo "MYSQL_HOST: '$MYSQL_HOST'"
+          echo "MYSQL_USER: '$MYSQL_USER'"
+          echo "MYSQL_DATABASE: '$MYSQL_DATABASE'"
           echo "MYSQL_PASSWORD: [HIDDEN]"  # Hide password for security
         env:
           MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
@@ -37,5 +37,9 @@ jobs:
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
         run: |
+          if [ -z "$MYSQL_HOST" ]; then
+            echo "❌ MYSQL_HOST is empty! Check GitHub Secrets."
+            exit 1
+          fi
           echo "🔗 Connecting to MySQL Database at $MYSQL_HOST..."
           mysql -h "$MYSQL_HOST" -P 3306 -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" < schema_changes.sql
